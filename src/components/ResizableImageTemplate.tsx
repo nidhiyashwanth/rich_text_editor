@@ -1,4 +1,3 @@
-// ResizableImageTemplate
 import { cn } from '@/lib/utils'
 import { NodeViewProps, NodeViewWrapper } from '@tiptap/react'
 import React, {
@@ -31,14 +30,12 @@ export const ResizableImageTemplate = ({ node, updateAttributes }: NodeViewProps
   const [editing, setEditing] = useState(false)
   const [resizingStyle, setResizingStyle] = useState<Pick<CSSProperties, 'width'> | undefined>()
 
-  // Lots of work to handle "not" div click events.
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent | TouchEvent) => {
       if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
         setEditing(false)
       }
     }
-    // Add click event listener and remove on cleanup
     document.addEventListener('click', handleClickOutside)
     return () => {
       document.removeEventListener('click', handleClickOutside)
@@ -63,8 +60,6 @@ export const ResizableImageTemplate = ({ node, updateAttributes }: NodeViewProps
           event instanceof MouseEvent ? event.clientX : event.touches[0].clientX
         newWidth = currentWidth + transform * (currentPosition - initialXPosition)
         setResizingStyle({ width: newWidth })
-        // If mouse is up, remove event listeners
-        // TODO: what about if touch is up?
         if ('buttons' in event && !event.buttons) removeListeners()
       }
 
@@ -80,7 +75,6 @@ export const ResizableImageTemplate = ({ node, updateAttributes }: NodeViewProps
 
       window.addEventListener('mousemove', mouseMoveHandler)
       window.addEventListener('mouseup', removeListeners)
-      // passive false to prevent scroll on mobile while resizing
       window.addEventListener('touchmove', mouseMoveHandler, { passive: false })
       window.addEventListener('touchend', removeListeners, { passive: false })
     }
@@ -114,12 +108,10 @@ export const ResizableImageTemplate = ({ node, updateAttributes }: NodeViewProps
       onBlur={() => setEditing(false)}
       style={{
         display: 'table',
-        // Weird! Basically tiptap/prose wraps this in a span and the line height causes an annoying buffer.
         lineHeight: '0px'
       }}
       className={`relative my-6 overflow-visible sm:my-8 ${node.attrs.align}`}
     >
-      {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
         {...node.attrs}
         ref={imgRef}
@@ -129,7 +121,10 @@ export const ResizableImageTemplate = ({ node, updateAttributes }: NodeViewProps
         alt='img'
         className={cn(
           editing && `cursor-default ring-1 ring-foreground`,
-          'min-w-[200px] max-w-full rounded-md'
+          'min-w-[200px] max-w-full rounded-md',
+          node.attrs.align === 'left' && 'float-left',
+          node.attrs.align === 'right' && 'float-right',
+          node.attrs.align === 'center' && 'mx-auto'
         )}
       />
       <div className='group'>

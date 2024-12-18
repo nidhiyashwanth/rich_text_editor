@@ -17,7 +17,8 @@ export const ImageResize = TipTapImage.extend({
           renderHTML: ({ height }) => ({ height })
         },
         align: {
-          default: 'mx-auto'
+            default: 'center',
+            renderHTML: ({ align }) => ({ 'data-align': align })
         }
       }
     },

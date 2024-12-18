@@ -155,16 +155,34 @@
     }
 
     // Image styles
-    img {
-      display: block;
-      height: auto;
-      margin: 1.5rem 0;
-      max-width: 100%;
-  
-      &.ProseMirror-selectednode {
-        outline: 3px solid var(--purple);
-      }
-    }
+    /* Image styles */
+img {
+  display: block;
+  height: auto;
+  margin: 1.5rem 0;
+  max-width: 100%;
+
+  &.ProseMirror-selectednode {
+    outline: 3px solid var(--purple);
+  }
+
+  &.float-left {
+    float: left;
+    margin-right: 1.5rem;
+  }
+
+  &.float-right {
+    float: right;
+    margin-left: 1.5rem;
+  }
+
+  &.mx-auto {
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
+  }
+}
+
     
   }
 

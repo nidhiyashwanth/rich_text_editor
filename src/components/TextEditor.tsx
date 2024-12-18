@@ -1,7 +1,7 @@
 // @ts-nocheck
 'use client'
 import { EditorProvider, useCurrentEditor } from '@tiptap/react'
-import React from 'react'
+import React, { useState } from 'react'
 
 import '@/styles/styles.scss'
 
@@ -15,15 +15,21 @@ import Table from '@tiptap/extension-table'
 import TableCell from '@tiptap/extension-table-cell'
 import TableHeader from '@tiptap/extension-table-header'
 import TableRow from '@tiptap/extension-table-row'
-import Image from '@tiptap/extension-image'
 import { ImageResize } from './ImageResize'
-const MenuBar = () => {
+import TextAlign from '@tiptap/extension-text-align'
+
+const MenuBar = ({ onSave }) => {
   const { editor } = useCurrentEditor()
 
   if (!editor) {
     return null
   }
   const activeHeadingLevel = [1, 2, 3, 4, 5, 6].find(level => editor.isActive('heading', { level })) || 'Headings';
+
+  const saveContent = () => {
+    const rawContent = editor.getHTML()
+    onSave(rawContent)
+  }
 
   return (
     <div className="control-group py-4">
@@ -67,6 +73,16 @@ const MenuBar = () => {
         >
           Strike
         </button>
+        <DropdownMenu>
+            <DropdownMenuTrigger>
+                <div className='cursor-pointer p-2 bg-gray-100 rounded'>Text Align</div>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent>
+                <DropdownMenuItem onClick={() => editor.chain().focus().setTextAlign('left').run()}>Left</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => editor.chain().focus().setTextAlign('center').run()}>Center</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => editor.chain().focus().setTextAlign('right').run()}>Right</DropdownMenuItem>
+            </DropdownMenuContent>
+        </DropdownMenu>
         <button
           onClick={() => editor.chain().focus().toggleCode().run()}
           disabled={
@@ -131,18 +147,6 @@ const MenuBar = () => {
           </DropdownMenuContent>
         </DropdownMenu>
 
-        {/* <button
-          onClick={() => editor.chain().focus().toggleBulletList().run()}
-          className={`${editor.isActive('bulletList') ? 'is-active bg-gray-200' : ''} bg-gray-100`}
-        >
-          Bullet list
-        </button>
-        <button
-          onClick={() => editor.chain().focus().toggleOrderedList().run()}
-          className={`${editor.isActive('orderedList') ? 'is-active bg-gray-200' : ''} bg-gray-100`}
-        >
-          Ordered list
-        </button> */}
         <button
           onClick={() => editor.chain().focus().toggleCodeBlock().run()}
           className={`${editor.isActive('codeBlock') ? 'is-active bg-gray-200' : ''} bg-gray-100`}
@@ -228,8 +232,14 @@ const MenuBar = () => {
         <DropdownMenuContent>
           <DropdownMenuItem onClick={() => editor.chain().focus().setImage({ src: 'https://placehold.co/800x400' }).run()}>Insert image</DropdownMenuItem>
           <DropdownMenuItem onClick={() => editor.chain().focus().setImage({ src: 'https://placehold.co/800x400/6A00F5/white' }).run()}>Insert image with custom style</DropdownMenuItem>
+          <DropdownMenuItem onClick={() => editor.chain().focus().setImage({ src: 'https://placehold.co/800x400', align: 'left' }).run()}>Align left</DropdownMenuItem>
+          <DropdownMenuItem onClick={() => editor.chain().focus().setImage({ src: 'https://placehold.co/800x400', align: 'right' }).run()}>Align right</DropdownMenuItem>
+          <DropdownMenuItem onClick={() => editor.chain().focus().setImage({ src: 'https://placehold.co/800x400', align: 'center' }).run()}>Align center</DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
+      <button onClick={saveContent} className="bg-gray-100 p-2 rounded">
+        Save
+      </button>
       </div>
     </div>
   )
@@ -249,21 +259,17 @@ const extensions = [
   TableCell,
   TableHeader,
   TableRow,
-  Image.configure({
-    HTMLAttributes: {
-      class: 'my-custom-class',
-    },
-    inline: true,
-    allowBase64: true,
-    allowResize: true,
-  }),
   ImageResize,
+  TextAlign.configure({ types: ['heading', 'paragraph', 'listItem', 'tableCell', 'tableHeader', 'tableRow', 'table', 'codeBlock', 'blockquote', 'horizontalRule', 'hardBreak', 'code', 'textStyle', 'image', ] }),
 ]
 
 const content = `
 <h2>
   Hi there,
 </h2>
+<h2>Heading</h2>
+        <p style="text-align: center">first paragraph</p>
+        <p style="text-align: right">second paragraph</p>
 <p>
   this is a <em>basic</em> example of <strong>Tiptap</strong>. Sure, there are all kind of basic text styles you’d probably expect from a text editor. But wait until you see the lists:
 </p>
@@ -297,11 +303,43 @@ const content = `
 `
 
 const TextEditor = () => {
-    return (
-      <div className="w-fit h-fit flex mx-auto flex-col focus:outline-none">
-        <EditorProvider slotBefore={<MenuBar />} extensions={extensions} content={content} immediatelyRender={false} className='editor'> </EditorProvider>
-      </div>
-    )
-  }  
+  const [savedContent, setSavedContent] = useState('')
+
+  const handleSave = async (content) => {
+    try {
+      const response = await fetch('/api/save-content', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ content }),
+      })
+
+      if (response.ok) {
+        const result = await response.json()
+        console.log('Content saved successfully:', result)
+        setSavedContent(content)
+      } else {
+        console.error('Failed to save content:', response.statusText)
+      }
+    } catch (error) {
+      console.error('Error saving content:', error)
+    }
+  }
+
+  return (
+    <div className="w-fit h-fit flex mx-auto flex-col focus:outline-none">
+      <EditorProvider slotBefore={<MenuBar onSave={handleSave} />} extensions={extensions} content={content} immediatelyRender={false} className='editor'> </EditorProvider>
+      {savedContent && (
+        <div className="mt-4">
+          <h3>Saved Content:</h3>
+          <div dangerouslySetInnerHTML={{ __html: savedContent }} />
+        </div>
+      )}
+      {/* Create a useEffect for displaying raw content as users type */}
+      <textarea className='w-full h-full bg-gray-100 p-2 rounded' value={content} onChange={(e) => setContent(e.target.value)}></textarea>
+    </div>
+  )
+}
 
 export default TextEditor
