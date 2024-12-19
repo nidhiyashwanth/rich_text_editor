@@ -1,7 +1,7 @@
 // src/components/TextEditor.tsx
 // @ts-nocheck
 'use client'
-import { EditorProvider, useCurrentEditor } from '@tiptap/react'
+import { useEditor, EditorContent } from '@tiptap/react'
 import React, { useState, useRef, useEffect } from 'react'
 
 import '@/styles/styles.scss'
@@ -18,10 +18,9 @@ import TableHeader from '@tiptap/extension-table-header'
 import TableRow from '@tiptap/extension-table-row'
 import { ImageResize } from './ImageResize'
 import TextAlign from '@tiptap/extension-text-align'
+import Loader from './loaders/Loader'
 
-const MenuBar = ({ onSave }) => {
-  const { editor } = useCurrentEditor()
-
+const MenuBar = ({ editor, onSave }) => {
   if (!editor) {
     return null
   }
@@ -70,19 +69,19 @@ const MenuBar = ({ onSave }) => {
               .toggleStrike()
               .run()
           }
-            className={`${editor.isActive('strike') ? 'is-active bg-gray-200' : ''} bg-gray-100`}
+          className={`${editor.isActive('strike') ? 'is-active bg-gray-200' : ''} bg-gray-100`}
         >
           Strike
         </button>
         <DropdownMenu>
-            <DropdownMenuTrigger>
-                <div className='cursor-pointer p-2 bg-gray-100 rounded'>Text Align</div>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent>
-                <DropdownMenuItem onClick={() => editor.chain().focus().setTextAlign('left').run()}>Left</DropdownMenuItem>
-                <DropdownMenuItem onClick={() => editor.chain().focus().setTextAlign('center').run()}>Center</DropdownMenuItem>
-                <DropdownMenuItem onClick={() => editor.chain().focus().setTextAlign('right').run()}>Right</DropdownMenuItem>
-            </DropdownMenuContent>
+          <DropdownMenuTrigger>
+            <div className='cursor-pointer p-2 bg-gray-100 rounded'>Text Align</div>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent>
+            <DropdownMenuItem onClick={() => editor.chain().focus().setTextAlign('left').run()}>Left</DropdownMenuItem>
+            <DropdownMenuItem onClick={() => editor.chain().focus().setTextAlign('center').run()}>Center</DropdownMenuItem>
+            <DropdownMenuItem onClick={() => editor.chain().focus().setTextAlign('right').run()}>Right</DropdownMenuItem>
+          </DropdownMenuContent>
         </DropdownMenu>
         <button
           onClick={() => editor.chain().focus().toggleCode().run()}
@@ -110,8 +109,8 @@ const MenuBar = ({ onSave }) => {
           Paragraph
         </button>
 
-{/* Wrap heading buttons inside dropdown */}
-<DropdownMenu className="w-fit h-fit bg-blue-500">
+        {/* Wrap heading buttons inside dropdown */}
+        <DropdownMenu className="w-fit h-fit bg-blue-500">
           <DropdownMenuTrigger>
             <div className="cursor-pointer p-2 bg-gray-100 rounded">
               {typeof activeHeadingLevel === 'number' ? `H${activeHeadingLevel}` : activeHeadingLevel}
@@ -130,12 +129,12 @@ const MenuBar = ({ onSave }) => {
           </DropdownMenuContent>
         </DropdownMenu>
 
-       {/* Dropdown for List Options */}
-       <DropdownMenu className="w-fit h-fit bg-blue-500">
+        {/* Dropdown for List Options */}
+        <DropdownMenu className="w-fit h-fit bg-blue-500">
           <DropdownMenuTrigger>
             <div className="cursor-pointer p-2 bg-gray-100 rounded">
-            {/* show lists if no list is active otherwise show the active list */}
-            {editor.isActive('bulletList') ? 'Bullet list' : editor.isActive('orderedList') ? 'Ordered list' : 'List'}
+              {/* show lists if no list is active otherwise show the active list */}
+              {editor.isActive('bulletList') ? 'Bullet list' : editor.isActive('orderedList') ? 'Ordered list' : 'List'}
             </div>
           </DropdownMenuTrigger>
           <DropdownMenuContent>
@@ -194,53 +193,53 @@ const MenuBar = ({ onSave }) => {
         </button>
         <button
           onClick={() => editor.chain().focus().setColor('#958DF1').run()}
-            className={`${editor.isActive('textStyle', { color: '#958DF1' }) ? 'is-active bg-gray-200' : ''} bg-gray-100`}
+          className={`${editor.isActive('textStyle', { color: '#958DF1' }) ? 'is-active bg-gray-200' : ''} bg-gray-100`}
         >
           Purple
         </button>
         <DropdownMenu>
-        <DropdownMenuTrigger>
-          <div className='cursor-pointer p-2 bg-gray-100 rounded'>Table Operations</div>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent>
-          <DropdownMenuItem onClick={() => editor.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run()}>
-            Insert table
-          </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => editor.chain().focus().addColumnBefore().run()}>Add column before</DropdownMenuItem>
-          <DropdownMenuItem onClick={() => editor.chain().focus().addColumnAfter().run()}>Add column after</DropdownMenuItem>
-          <DropdownMenuItem onClick={() => editor.chain().focus().deleteColumn().run()}>Delete column</DropdownMenuItem>
-          <DropdownMenuItem onClick={() => editor.chain().focus().addRowBefore().run()}>Add row before</DropdownMenuItem>
-          <DropdownMenuItem onClick={() => editor.chain().focus().addRowAfter().run()}>Add row after</DropdownMenuItem>
-          <DropdownMenuItem onClick={() => editor.chain().focus().deleteRow().run()}>Delete row</DropdownMenuItem>
-          <DropdownMenuItem onClick={() => editor.chain().focus().deleteTable().run()}>Delete table</DropdownMenuItem>
-          <DropdownMenuItem onClick={() => editor.chain().focus().mergeCells().run()}>Merge cells</DropdownMenuItem>
-          <DropdownMenuItem onClick={() => editor.chain().focus().splitCell().run()}>Split cell</DropdownMenuItem>
-          <DropdownMenuItem onClick={() => editor.chain().focus().toggleHeaderColumn().run()}>Toggle header column</DropdownMenuItem>
-          <DropdownMenuItem onClick={() => editor.chain().focus().toggleHeaderRow().run()}>Toggle header row</DropdownMenuItem>
-          <DropdownMenuItem onClick={() => editor.chain().focus().toggleHeaderCell().run()}>Toggle header cell</DropdownMenuItem>
-          <DropdownMenuItem onClick={() => editor.chain().focus().mergeOrSplit().run()}>Merge or split</DropdownMenuItem>
-          <DropdownMenuItem onClick={() => editor.chain().focus().setCellAttribute('colspan', 2).run()}>Set cell attribute</DropdownMenuItem>
-          <DropdownMenuItem onClick={() => editor.chain().focus().fixTables().run()}>Fix tables</DropdownMenuItem>
-          <DropdownMenuItem onClick={() => editor.chain().focus().goToNextCell().run()}>Go to next cell</DropdownMenuItem>
-          <DropdownMenuItem onClick={() => editor.chain().focus().goToPreviousCell().run()}>Go to previous cell</DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
+          <DropdownMenuTrigger>
+            <div className='cursor-pointer p-2 bg-gray-100 rounded'>Table Operations</div>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent>
+            <DropdownMenuItem onClick={() => editor.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run()}>
+              Insert table
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => editor.chain().focus().addColumnBefore().run()}>Add column before</DropdownMenuItem>
+            <DropdownMenuItem onClick={() => editor.chain().focus().addColumnAfter().run()}>Add column after</DropdownMenuItem>
+            <DropdownMenuItem onClick={() => editor.chain().focus().deleteColumn().run()}>Delete column</DropdownMenuItem>
+            <DropdownMenuItem onClick={() => editor.chain().focus().addRowBefore().run()}>Add row before</DropdownMenuItem>
+            <DropdownMenuItem onClick={() => editor.chain().focus().addRowAfter().run()}>Add row after</DropdownMenuItem>
+            <DropdownMenuItem onClick={() => editor.chain().focus().deleteRow().run()}>Delete row</DropdownMenuItem>
+            <DropdownMenuItem onClick={() => editor.chain().focus().deleteTable().run()}>Delete table</DropdownMenuItem>
+            <DropdownMenuItem onClick={() => editor.chain().focus().mergeCells().run()}>Merge cells</DropdownMenuItem>
+            <DropdownMenuItem onClick={() => editor.chain().focus().splitCell().run()}>Split cell</DropdownMenuItem>
+            <DropdownMenuItem onClick={() => editor.chain().focus().toggleHeaderColumn().run()}>Toggle header column</DropdownMenuItem>
+            <DropdownMenuItem onClick={() => editor.chain().focus().toggleHeaderRow().run()}>Toggle header row</DropdownMenuItem>
+            <DropdownMenuItem onClick={() => editor.chain().focus().toggleHeaderCell().run()}>Toggle header cell</DropdownMenuItem>
+            <DropdownMenuItem onClick={() => editor.chain().focus().mergeOrSplit().run()}>Merge or split</DropdownMenuItem>
+            <DropdownMenuItem onClick={() => editor.chain().focus().setCellAttribute('colspan', 2).run()}>Set cell attribute</DropdownMenuItem>
+            <DropdownMenuItem onClick={() => editor.chain().focus().fixTables().run()}>Fix tables</DropdownMenuItem>
+            <DropdownMenuItem onClick={() => editor.chain().focus().goToNextCell().run()}>Go to next cell</DropdownMenuItem>
+            <DropdownMenuItem onClick={() => editor.chain().focus().goToPreviousCell().run()}>Go to previous cell</DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
 
-      <DropdownMenu>
-        <DropdownMenuTrigger>
-          <div className='cursor-pointer p-2 bg-gray-100 rounded'>Image Operations</div>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent>
-          <DropdownMenuItem onClick={() => editor.chain().focus().setImage({ src: 'https://placehold.co/800x400' }).run()}>Insert image</DropdownMenuItem>
-          <DropdownMenuItem onClick={() => editor.chain().focus().setImage({ src: 'https://placehold.co/800x400/6A00F5/white' }).run()}>Insert image with custom style</DropdownMenuItem>
-          <DropdownMenuItem onClick={() => editor.chain().focus().setImage({ src: 'https://placehold.co/800x400', align: 'left' }).run()}>Align left</DropdownMenuItem>
-          <DropdownMenuItem onClick={() => editor.chain().focus().setImage({ src: 'https://placehold.co/800x400', align: 'right' }).run()}>Align right</DropdownMenuItem>
-          <DropdownMenuItem onClick={() => editor.chain().focus().setImage({ src: 'https://placehold.co/800x400', align: 'center' }).run()}>Align center</DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
-      <button onClick={saveContent} className="bg-gray-100 p-2 rounded">
-        Save
-      </button>
+        <DropdownMenu>
+          <DropdownMenuTrigger>
+            <div className='cursor-pointer p-2 bg-gray-100 rounded'>Image Operations</div>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent>
+            <DropdownMenuItem onClick={() => editor.chain().focus().setImage({ src: 'https://placehold.co/800x400' }).run()}>Insert image</DropdownMenuItem>
+            <DropdownMenuItem onClick={() => editor.chain().focus().setImage({ src: 'https://placehold.co/800x400/6A00F5/white' }).run()}>Insert image with custom style</DropdownMenuItem>
+            <DropdownMenuItem onClick={() => editor.chain().focus().setImage({ src: 'https://placehold.co/800x400', align: 'left' }).run()}>Align left</DropdownMenuItem>
+            <DropdownMenuItem onClick={() => editor.chain().focus().setImage({ src: 'https://placehold.co/800x400', align: 'right' }).run()}>Align right</DropdownMenuItem>
+            <DropdownMenuItem onClick={() => editor.chain().focus().setImage({ src: 'https://placehold.co/800x400', align: 'center' }).run()}>Align center</DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+        <button onClick={saveContent} className="bg-gray-100 p-2 rounded">
+          Save
+        </button>
       </div>
     </div>
   )
@@ -260,7 +259,10 @@ const extensions = [
   TableCell,
   TableHeader,
   TableRow,
-  ImageResize,
+  ImageResize.configure({
+    inline: true,
+    allowBase64: true,
+  }),
   TextAlign.configure({ types: ['heading', 'paragraph', 'listItem', 'tableCell', 'tableHeader', 'tableRow', 'table', 'codeBlock', 'blockquote', 'horizontalRule', 'hardBreak', 'code', 'textStyle', 'image', ] }),
 ]
 
@@ -283,9 +285,18 @@ const content = `
 const TextEditor = () => {
   const [savedContent, setSavedContent] = useState('')
   const [isUploading, setIsUploading] = useState(false)
-  const [imageUrl, setImageUrl] = useState('')
+  const [isFirstUpload, setIsFirstUpload] = useState(true)
   const fileInputRef = useRef(null)
-  const editorRef = useRef(null)
+
+  const editor = useEditor({
+    extensions,
+    content,
+    editorProps: {
+      attributes: {
+        class: 'editor'
+      }
+    }
+  })
 
   const handleSave = async (content) => {
     try {
@@ -311,47 +322,72 @@ const TextEditor = () => {
 
   const handleFileDrop = async (event) => {
     event.preventDefault();
-    setIsUploading(true);
 
     const file = event.dataTransfer.files[0];
-    const reader = new FileReader();
+    console.log('File being uploaded:', file);
 
-    reader.onload = (e) => {
-      const localImageUrl = e.target.result;
-      setImageUrl(localImageUrl);
-      if (editorRef.current) {
-        editorRef.current.chain().focus().setImage({ src: localImageUrl }).run();
-      } else {
-        console.error('Editor instance is not available');
-      }
-    };
+    if (isFirstUpload) {
+      setIsUploading(true);
 
-    reader.readAsDataURL(file);
+      const formData = new FormData();
+      formData.append('file', file);
 
-    const formData = new FormData();
-    formData.append('file', file);
+      try {
+        const response = await fetch('http://localhost:5000/api/upload', {
+          method: 'POST',
+          body: formData,
+        });
 
-    try {
-      const response = await fetch('http://localhost:5000/api/upload', {
-        method: 'POST',
-        body: formData,
-      });
+        if (response.ok) {
+          const data = await response.json();
+          console.log('Upload response:', data);
+          const url = data.url;
 
-      if (response.ok) {
-        const { url } = await response.json();
-        setImageUrl(url);
-        if (editorRef.current) {
-          editorRef.current.chain().focus().setImage({ src: url }).run();
+          console.log('Editor:', editor);
+
+          if (editor) {
+            editor.chain()
+              .focus()
+              .setImage({
+                src: url,
+                alt: file.name,
+                width: 640,
+                height: 'auto',
+              })
+              .run();
+            console.log('Image inserted into editor');
+          } else {
+            console.error('Editor is null');
+          }
         } else {
-          console.error('Editor instance is not available');
+          console.error('Failed to upload image:', response.statusText);
         }
-      } else {
-        console.error('Failed to upload image:', response.statusText);
+      } catch (error) {
+        console.error('Error uploading image:', error);
+      } finally {
+        setIsUploading(false);
+        setIsFirstUpload(false);
       }
-    } catch (error) {
-      console.error('Error uploading image:', error);
-    } finally {
-      setIsUploading(false);
+    } else {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const localImageUrl = e.target.result;
+        if (editor) {
+          editor.chain()
+            .focus()
+            .setImage({
+              src: localImageUrl,
+              alt: file.name,
+              width: 640,
+              height: 'auto',
+            })
+            .run();
+          console.log('Image inserted into editor');
+        } else {
+          console.error('Editor is null');
+        }
+      };
+      reader.readAsDataURL(file);
     }
   };
 
@@ -373,21 +409,18 @@ const TextEditor = () => {
         onChange={handleFileInputChange}
       />
       <div
-        className="editor-container"
+        className="editor-container relative"
         onDrop={handleFileDrop}
         onDragOver={(event) => event.preventDefault()}
       >
-        <EditorProvider
-          slotBefore={<MenuBar onSave={handleSave} />}
-          extensions={extensions}
-          content={content}
-          immediatelyRender={false}
-          className="editor"
-          editor={editorRef}
-        >
-          {isUploading && <div className="loader">Uploading...</div>}
-          {imageUrl && <img src={imageUrl} alt="Uploaded" />}
-        </EditorProvider>
+        <MenuBar editor={editor} onSave={handleSave} />
+        <EditorContent editor={editor} className="editor" />
+        {isUploading && (
+          <div role="status" className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
+            <Loader/>
+            <span className="sr-only">Loading...</span>
+          </div>
+        )}
       </div>
       {savedContent && (
         <div className="mt-4">
