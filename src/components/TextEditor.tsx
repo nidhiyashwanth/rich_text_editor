@@ -1,7 +1,8 @@
+// src/components/TextEditor.tsx
 // @ts-nocheck
 'use client'
 import { EditorProvider, useCurrentEditor } from '@tiptap/react'
-import React, { useState } from 'react'
+import React, { useState, useRef, useEffect } from 'react'
 
 import '@/styles/styles.scss'
 
@@ -267,43 +268,24 @@ const content = `
 <h2>
   Hi there,
 </h2>
-<h2>Heading</h2>
-        <p style="text-align: center">first paragraph</p>
-        <p style="text-align: right">second paragraph</p>
 <p>
   this is a <em>basic</em> example of <strong>Tiptap</strong>. Sure, there are all kind of basic text styles you’d probably expect from a text editor. But wait until you see the lists:
 </p>
-<ul>
-  <li>
-    That’s a bullet list with one …
-  </li>
-  <li>
-    … or two list items.
-  </li>
-</ul>
-<p>
-  Isn’t that great? And all of that is editable. But wait, there’s more. Let’s try a code block:
-</p>
-<pre><code class="language-css">body {
-  display: none;
-}</code></pre>
-<p>
-  I know, I know, this is impressive. It’s only the tip of the iceberg though. Give it a try and click a little bit around. Don’t forget to check the other examples too.
-</p>
+
 <blockquote>
   Wow, that’s amazing. Good work, boy! 👏
   <br />
   — Mom
 </blockquote>
-
-<p>This is a basic example of implementing images. Drag to re-order.</p>
-        <img src="https://placehold.co/800x400" />
-        <img src="https://placehold.co/800x400/6A00F5/white" />
 <p>You can also insert images with custom styles.</p>
 `
 
 const TextEditor = () => {
   const [savedContent, setSavedContent] = useState('')
+  const [isUploading, setIsUploading] = useState(false)
+  const [imageUrl, setImageUrl] = useState('')
+  const fileInputRef = useRef(null)
+  const editorRef = useRef(null)
 
   const handleSave = async (content) => {
     try {
@@ -320,24 +302,99 @@ const TextEditor = () => {
         console.log('Content saved successfully:', result)
         setSavedContent(content)
       } else {
-        console.error('Failed to save content:', response.statusText)
+        console.error('Failed to save content:', response.statusText);
       }
     } catch (error) {
-      console.error('Error saving content:', error)
+      console.error('Error saving content:', error);
     }
   }
 
+  const handleFileDrop = async (event) => {
+    event.preventDefault();
+    setIsUploading(true);
+
+    const file = event.dataTransfer.files[0];
+    const reader = new FileReader();
+
+    reader.onload = (e) => {
+      const localImageUrl = e.target.result;
+      setImageUrl(localImageUrl);
+      if (editorRef.current) {
+        editorRef.current.chain().focus().setImage({ src: localImageUrl }).run();
+      } else {
+        console.error('Editor instance is not available');
+      }
+    };
+
+    reader.readAsDataURL(file);
+
+    const formData = new FormData();
+    formData.append('file', file);
+
+    try {
+      const response = await fetch('http://localhost:5000/api/upload', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (response.ok) {
+        const { url } = await response.json();
+        setImageUrl(url);
+        if (editorRef.current) {
+          editorRef.current.chain().focus().setImage({ src: url }).run();
+        } else {
+          console.error('Editor instance is not available');
+        }
+      } else {
+        console.error('Failed to upload image:', response.statusText);
+      }
+    } catch (error) {
+      console.error('Error uploading image:', error);
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  const handleFileInputChange = (event) => {
+    const file = event.target.files[0];
+    if (file) {
+      const dataTransfer = new DataTransfer();
+      dataTransfer.items.add(file);
+      handleFileDrop({ dataTransfer });
+    }
+  };
+
   return (
     <div className="w-fit h-fit flex mx-auto flex-col focus:outline-none">
-      <EditorProvider slotBefore={<MenuBar onSave={handleSave} />} extensions={extensions} content={content} immediatelyRender={false} className='editor'> </EditorProvider>
+      <input
+        type="file"
+        ref={fileInputRef}
+        style={{ display: 'none' }}
+        onChange={handleFileInputChange}
+      />
+      <div
+        className="editor-container"
+        onDrop={handleFileDrop}
+        onDragOver={(event) => event.preventDefault()}
+      >
+        <EditorProvider
+          slotBefore={<MenuBar onSave={handleSave} />}
+          extensions={extensions}
+          content={content}
+          immediatelyRender={false}
+          className="editor"
+          editor={editorRef}
+        >
+          {isUploading && <div className="loader">Uploading...</div>}
+          {imageUrl && <img src={imageUrl} alt="Uploaded" />}
+        </EditorProvider>
+      </div>
       {savedContent && (
         <div className="mt-4">
           <h3>Saved Content:</h3>
           <div dangerouslySetInnerHTML={{ __html: savedContent }} />
         </div>
       )}
-      {/* Create a useEffect for displaying raw content as users type */}
-      <textarea className='w-full h-full bg-gray-100 p-2 rounded' value={content} onChange={(e) => setContent(e.target.value)}></textarea>
     </div>
   )
 }
